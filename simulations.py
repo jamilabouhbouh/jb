@@ -5,13 +5,16 @@ import time
 import sys
 import xlsxwriter
 
-net=sys.argv[1]
+run_net=sys.argv[1]
 
-b=np.array([0,10,20,30,40,50,75,100,150,250,350,450,600])
+print('network is {}'.format(run_net))
+
+b=np.array([0,2, 5, 10, 30, 50, 75, 100, 150, 250, 400, 500, 600])
+SNR=25
 
 load = False
 
-def sim(SNR, b, nets=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False,segmented=False):
+def sim(SNR, b, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False,segmented=False):
 
     IVIM_signal_noisy, f, D, Dp = sim_signal(SNR, b, sims=sims,Dmin = Dmin, Dmax = Dmax, fmin = fmin, fmax = fmax, Dsmin= Dsmin, Dsmax=Dsmax, rician=rician)
 
@@ -20,16 +23,17 @@ def sim(SNR, b, nets=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /
     f = f[:num_samples_leval]
 
     start_time = time.time()
-    net = deep.learn_IVIM(IVIM_signal_noisy, b, net=nets)
+    net = deep.learn_IVIM(IVIM_signal_noisy, b, run_net=run_net)
     elapsed_time = time.time() - start_time
-    print('time elapsed for training: {}\n'.format(elapsed_time))
+    print('\ntime elapsed for training: {}\n'.format(elapsed_time))
     IVIM_signal_noisy=IVIM_signal_noisy[:num_samples_leval, :]
     start_time = time.time()
     paramsNN = deep.infer_IVIM(IVIM_signal_noisy, b, net)
     elapsed_time = time.time() - start_time
-    print('time elapsed for  inference: {}\n'.format(elapsed_time))
+    print('\ntime elapsed for  inference: {}\n'.format(elapsed_time))
     # ['Ke_NN.nii', 'f_NN.nii', 'tau_NN.nii', 'v_NN.nii']
     del net
+    print('results for NN')
     matNN=print_errors(np.squeeze(D), np.squeeze(f), np.squeeze(Dp), paramsNN)
     del paramsNN
     start_time = time.time()
@@ -39,7 +43,8 @@ def sim(SNR, b, nets=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /
         paramsf = fit.fit_least_squares_array(b,IVIM_signal_noisy)
 
     elapsed_time = time.time() - start_time
-    print('time elapsed for lsqfit: {}\n'.format(elapsed_time))
+    print('\ntime elapsed for lsqfit: {}\n'.format(elapsed_time))
+    print('results for lsqfit')
     matlsq=print_errors(np.squeeze(D),np.squeeze(f),np.squeeze(Dp),paramsf)
 
     del paramsf, IVIM_signal_noisy
@@ -109,4 +114,12 @@ def print_errors(D,f,Dp,params):
 
     return mats
 
-matlsq, matNN = sim(15,b,nets=net)
+
+if run_net == 'loss_con':
+    lr = 0.0001
+else:
+    lr = 0.0005
+
+matlsq, matNN = sim(SNR,b,run_net=run_net)
+
+print('network was {}'.format(run_net))

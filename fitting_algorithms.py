@@ -10,7 +10,8 @@ from scipy import stats
 
 def goodness_of_fit(b,Dp,Dt,Fp,S0,data):
     datasim=ivim(np.tile(np.expand_dims(b,axis=0),(len(Dp),1)), np.tile(np.expand_dims(Dp,axis=1),(1,len(b))), np.tile(np.expand_dims(Dt,axis=1),(1,len(b))), np.tile(np.expand_dims(Fp,axis=1),(1,len(b))), np.tile(np.expand_dims(S0,axis=1),(1,len(b))))
-    GOF=np.sum(np.square(datasim-data),axis=1)
+    norm=np.sum(data,axis=1)
+    GOF=np.sum(np.square((datasim-data)/norm[:, None]),axis=1)
 
     return GOF
 
@@ -72,16 +73,16 @@ def fit_least_squares_array(b, x_dw,S0_output=False,fixS0=False):
     else:
         for aa in range(len(x_dw)):
             Dp[aa], Dt[aa], Fp[aa] = fit_least_squares(b,x_dw[aa,:],fixS0=fixS0)
-        return [Dp, Dt, Fp]
+        return [Dp, Dt, Fp, S0]
 
 def fit_least_squares(b, x_dw, S0_output=False,fixS0=False):
     try:
         #bounds = (0, 1)
         if fixS0:
-            bounds = ([0.06, 0, 0], [2, 5, 7])
+            bounds = ([0.005, 0, 0], [2, 5, 7])
             params, _ = curve_fit(ivimN_noS0, b, x_dw, p0=[0.1, 0.001, 0.1], bounds=bounds)
         else:
-            bounds = ([0.06, 0, 0, 0.5], [2, 5, 7, 1.5])
+            bounds = ([0.05, 0, 0, 0.8], [5, 5, 8, 1.2])
             params, _ = curve_fit(ivimN, b, x_dw, p0=[0.1, 0.001, 0.1, 1], bounds=bounds)
         Dp, Dt, Fp, S0 = params[0]/10, params[1]/1000, params[2]/10, params[3]
         if S0_output:
