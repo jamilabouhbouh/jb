@@ -161,7 +161,7 @@ class Net_split(nn.Module):
         return X, Dp, Dt, Fp, S0
 
 
-def learn_IVIM(X_train,b_values, batch_size=128, lr=0.001, net=None, run_net='loss_con', patience = 10):
+def learn_IVIM(X_train,b_values, batch_size=128, lr=0.001, net=None, run_net='sig_con', patience=10):
 
     S0=np.mean(X_train[:,b_values == 0],axis=1)
     X_train=X_train/S0[:,None]
