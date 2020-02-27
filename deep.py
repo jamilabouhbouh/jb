@@ -161,7 +161,7 @@ class Net_split(nn.Module):
         return X, Dp, Dt, Fp, S0
 
 
-def learn_IVIM(X_train,b_values, batch_size=128, lr=0.001, net=None, run_net='sig_con', patience=10):
+def learn_IVIM(X_train,b_values, batch_size=128, lr=0.01, net=None, run_net='sig_con', patience=10):
 
     S0=np.mean(X_train[:,b_values == 0],axis=1)
     X_train=X_train/S0[:,None]
@@ -205,15 +205,15 @@ def learn_IVIM(X_train,b_values, batch_size=128, lr=0.001, net=None, run_net='si
         running_loss = 0.
         losstotcon = 0.
 
-        for i, X_batch in enumerate(tqdm(trainloader), 0):
+        for i, X_batch in enumerate(tqdm(trainloader, position=0, leave=True), 0):
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
             X_pred, Dp_pred, Dt_pred, Fp_pred, S0pred = net(X_batch)
             X_pred[isnan(X_pred)] = 0
-            X_pred[X_pred < -10] = -10
-            X_pred[X_pred > 50] = 50
+            X_pred[X_pred < 0] = 0
+            X_pred[X_pred > 3] = 3
             if run_net == 'loss_con':
                 loss_con =  (nn.functional.relu(-Dp_pred) + nn.functional.relu(-Dt_pred) + nn.functional.relu(-Fp_pred) \
                            + nn.functional.relu(-S0pred) + nn.functional.relu((Dp_pred-3)) \
@@ -236,8 +236,9 @@ def learn_IVIM(X_train,b_values, batch_size=128, lr=0.001, net=None, run_net='si
         else:
             print("Loss: {}".format(running_loss))
         # early stopping
-        if epoch == 6:
-            best = 1e16
+        if run_net == 'loss_con':
+            if epoch == 6:
+                best = 1e16
         if running_loss < best:
             print("############### Saving good model ###############################")
             final_model = net.state_dict()

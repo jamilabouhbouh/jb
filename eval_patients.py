@@ -55,7 +55,7 @@ for fold in aa1:
             mask = mask.get_data()
             bbb=0
             dataall=nib.load('{folder}/CR{fold:02d}/MRI{ss}_{dat}.nii.gz'.format(folder=fold1,fold=fold,ss=ss ,dat=datatype))
-            dataall = data.get_data()
+            dataall = dataall.get_data()
             sx,sy,sz,bvalnum=dataall.shape
             maskarray=np.reshape(mask, (sx*sy*sz))
             dataall=np.reshape(dataall,(sx*sy*sz,bvalnum))
@@ -94,7 +94,7 @@ for fold in bb:
 
             mask = mask.get_data()
             dataall=nib.load('{folder}/{fold}/{ss}/{dat}.nii.gz'.format(folder=fold2,fold=fold,ss=ss ,dat=datatype))
-            dataall = data.get_data()
+            dataall = dataall.get_data()
             sx,sy,sz,bvalnum=dataall.shape
             maskarray=np.reshape(mask, (sx*sy*sz))
             dataall=np.reshape(dataall,(sx*sy*sz,bvalnum))
