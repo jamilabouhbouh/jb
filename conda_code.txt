@@ -1,2 +1,3 @@
 . "/home/ojgurney-champion/anaconda3/etc/profile.d/conda.sh"
 conda activate myenv
+/home/ojgurney-champion/anaconda3/bin/spyder

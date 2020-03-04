@@ -4,15 +4,16 @@ import fitting_algorithms as fit
 import time
 import sys
 import xlsxwriter
+from hyperparams import hyperparams as arg
 
-run_net=sys.argv[1]
+#run_net=sys.argv[1]
 
-print('network is {}'.format(run_net))
+#print('network is {}'.format(run_net))
 
-b=np.array([0,2, 5, 10, 30, 50, 75, 100, 150, 250, 400, 500, 600])
-SNR=25
+#b=np.array([0,2, 5, 10, 30, 50, 75, 100, 150, 250, 400, 500, 600])
+#SNR=25
 
-load = False
+#load = False
 
 def sim(SNR, b, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False,segmented=False):
 
@@ -23,7 +24,7 @@ def sim(SNR, b, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.
     f = f[:num_samples_leval]
 
     start_time = time.time()
-    net = deep.learn_IVIM(IVIM_signal_noisy, b, run_net=run_net)
+    net = deep.learn_IVIM(IVIM_signal_noisy, b, arg, run_net=run_net)
     elapsed_time = time.time() - start_time
     print('\ntime elapsed for training: {}\n'.format(elapsed_time))
     IVIM_signal_noisy=IVIM_signal_noisy[:num_samples_leval, :]
@@ -51,8 +52,7 @@ def sim(SNR, b, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.
 
     return matlsq, matNN
 
-def sim_signal(SNR, b, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False):
-    state = 123
+def sim_signal(SNR, b, sims = 100000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False, state = 123):
     rg = np.random.RandomState(state)
     test = rg.uniform(0, 1, (sims, 1))
     D = Dmin + (test * (Dmax - Dmin))
@@ -115,11 +115,11 @@ def print_errors(D,f,Dp,params):
     return mats
 
 
-if run_net == 'loss_con':
-    lr = 0.0001
-else:
-    lr = 0.0005
-
-matlsq, matNN = sim(SNR,b,run_net=run_net)
-
-print('network was {}'.format(run_net))
+#if run_net == 'loss_con':
+#    lr = 0.0001
+#else:
+#    lr = 0.0005
+#
+#matlsq, matNN = sim(SNR,b,run_net=run_net)
+#
+#print('network was {}'.format(run_net))

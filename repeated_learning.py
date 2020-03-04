@@ -13,7 +13,7 @@ import torch
 from fitting_algorithms import fit_least_squares_array, ivimN, fit_least_squares_S0, fit_segmented_array, goodness_of_fit
 import matplotlib.pyplot as plt
 from sys import platform
-lr = 0.0005
+from hyperparams import hyperparams as arg
 
 for run_net in ['abs_con','sig_con','free']:
     for dummys in [0]:
@@ -120,8 +120,10 @@ for run_net in ['abs_con','sig_con','free']:
         res2 = [i for i, val in enumerate(datatot2!=datatot2) if not val.any()]
         paramsNN=np.zeros([20,4,np.shape(datatot3)[0]])
         for qq in range(20):
-            net = deep.learn_IVIM(datatot[res],bvalues,run_net=run_net,lr=lr)
+            [net, matNN] = deep.pretrain(bvalues, arg, SNR=15, net=run_net, state=qq, sims=100000, lr=arg.lr)
+            net = deep.learn_IVIM(datatot[res], bvalues, arg, net=net, lr=arg.lr)
             paramsNN[qq]=deep.infer_IVIM(datatot3, bvalues, net)
+            matNN_count[qq]=matNN
             del net
         # save NN results
         names = ['Dp_NN_{net}_rep'.format(net=run_net), 'D_NN_{net}_2'.format(net=run_net), 'f_NN_{net}_2'.format(net=run_net), 'S0_NN_{net}_2'.format(net=run_net)]
@@ -143,4 +145,5 @@ for run_net in ['abs_con','sig_con','free']:
                 img[deep.isnan(img)] = 0
                 img = np.reshape(img, [sx, sy, sz])
                 imgtot[:,:,:,rep]=img
-            nib.save(nib.Nifti1Image(imgtot * multiple[k], data.affine, data.header), '{folder}/CR{fold:02d}/MRI{ss}_{dat}_{name}.nii.gz'.format(folder=fold1,fold=fold,ss=ss, dat=dattype,name=names[k]))
+            nib.save(nib.Nifti1Image(imgtot * multiple[k], data.affine, data.header), '{folder}/CR{fold:02d}/MRI{ss}_{dat}_{name}_{opt}_pretrain.nii.gz'.format(folder=fold1,fold=fold,ss=ss, dat=dattype,name=names[k],opt=arg.optim))
+        np.save('{folder}/pretrain.npy', matNN_count)

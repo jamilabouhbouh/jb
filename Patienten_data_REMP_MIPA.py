@@ -6,6 +6,7 @@ import torch
 from fitting_algorithms import fit_least_squares_array, ivimN, fit_least_squares_S0, fit_segmented_array, goodness_of_fit
 import matplotlib.pyplot as plt
 from sys import platform
+from hyperparams import hyperparams as arg
 
 for dummys in [1]:
     if dummys is 0:
@@ -138,8 +139,8 @@ for dummys in [1]:
         plt.plot(datmean2[index2])
         plt.plot(ivimN(bvalues[index], paramslsq2[0]*10, paramslsq2[1]*1000, paramslsq2[2]*10, paramslsq2[3]))
 
-        net = deep.learn_IVIM(np.transpose(np.repeat(np.expand_dims(datmean,1),1000,axis=1)), bvalues, run_net='sig_con')
-        net2 = deep.learn_IVIM(np.transpose(np.repeat(np.expand_dims(datmean2,1),1000,axis=1)), bvalues2, run_net='sig_con')
+        net = deep.learn_IVIM(np.transpose(np.repeat(np.expand_dims(datmean,1),1000,axis=1)), bvalues, arg)
+        net2 = deep.learn_IVIM(np.transpose(np.repeat(np.expand_dims(datmean2,1),1000,axis=1)), bvalues2, arg)
 
         paramsNN=deep.infer_IVIM(np.expand_dims(datmean,0), bvalues, net)
         paramsNN2=deep.infer_IVIM(np.expand_dims(datmean2,0), bvalues2, net2)
@@ -150,18 +151,6 @@ for dummys in [1]:
         plt.plot(datmean2[index2])
         plt.plot(ivimN(bvalues[index], paramsNN2[0][0]*10, paramsNN2[1][0]*1000, paramsNN2[2][0]*10, paramsNN2[3][0]))
 
-
-        net = deep.learn_IVIM(np.transpose(np.repeat(np.expand_dims(datmean,1),1000,axis=1)), bvalues, run_net ='free')
-        net2 = deep.learn_IVIM(np.transpose(np.repeat(np.expand_dims(datmean2,1),1000,axis=1)), bvalues2, run_net ='free')
-
-        paramsNN=deep.infer_IVIM(np.expand_dims(datmean,0), bvalues, net)
-        paramsNN2=deep.infer_IVIM(np.expand_dims(datmean2,0), bvalues2, net2)
-
-        plt.plot(datmean[index])
-        plt.plot(ivimN(bvalues[index], paramsNN[0][0]*10, paramsNN[1][0]*1000, paramsNN[2][0]*10, paramsNN[3][0]))
-
-        plt.plot(datmean2[index2])
-        plt.plot(ivimN(bvalues[index], paramsNN2[0][0]*10, paramsNN2[1][0]*1000, paramsNN2[2][0]*10, paramsNN2[3][0]))
 
     print('least squares fitting\n')
     if dolsq:
@@ -198,19 +187,17 @@ for dummys in [1]:
         res = [i for i, val in enumerate(datatot!=datatot) if not val.any()]
         res2 = [i for i, val in enumerate(datatot2!=datatot2) if not val.any()]
 
-        if constrained:
-            net = deep.learn_IVIM(datatot[res],bvalues,run_net='sig_con')
-            net2 = deep.learn_IVIM(datatot2[res2],bvalues2,run_net='sig_con')
+        net = deep.learn_IVIM(datatot[res],bvalues,arg)
+        net2 = deep.learn_IVIM(datatot2[res2],bvalues2,arg)
+        if arg.run_net == 'con':
             torch.save(net, 'network_con.pt')
             torch.save(net2, 'network2_con.pt')
         else:
-            net = deep.learn_IVIM(datatot[res],bvalues, run_net='free')
-            net2 = deep.learn_IVIM(datatot2[res2],bvalues2, run_net='free')
             torch.save(net, 'network.pt')
             torch.save(net2, 'network2.pt')
 
     else:
-        if constrained:
+        if arg.run_net == 'con':
             net=torch.load('network_con.pt')
             net2=torch.load('network2_con.pt')
         else:

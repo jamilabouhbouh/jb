@@ -3,13 +3,14 @@ import numpy as np
 import deep
 from fitting_algorithms import fit_least_squares_array, ivimN, fit_least_squares_S0, fit_segmented_array, goodness_of_fit
 import sys as sys
+from hyperparams import hyperparams as arg
 
 lsq_only = False
 bvalues = np.array([0, 10, 20, 30, 50, 75, 150, 300, 450, 600])
 multiple = [100., 1000., 1000000., 10000, 1000]
-
+lr=arg.lr
 if not lsq_only:
-    for run_net in ['abs_con']:
+    for run_net in ['sig_con']:
 
         print('network is {}'.format(run_net))
         for ii in range(1):
@@ -25,11 +26,8 @@ if not lsq_only:
             S0 = np.nanmean(X_dw_sel[:, bvalues == 0], axis=1)
             X_dw_sel = X_dw_sel / S0[:, None]
             res = [i for i, val in enumerate(X_dw_sel != X_dw_sel) if not val.any()]
-            if run_net == 'loss_con':
-                lr = 0.0001
-            else:
-                lr = 0.0005
-            net = deep.learn_IVIM(X_dw_sel[res],bvalues,run_net=run_net,lr=lr)
+
+            net = deep.learn_IVIM(X_dw_sel[res],bvalues,arg,lr=lr)
             paramsNN=deep.infer_IVIM(X_dw_sel, bvalues, net)
             del net
             gofNN=goodness_of_fit(bvalues,paramsNN[0],paramsNN[1],paramsNN[2],paramsNN[3],X_dw_sel)
