@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from sys import platform
 from hyperparams import hyperparams as arg
 
-for run_net in ['abs_con','sig_con','free']:
+for run_net in ['sig_con']:
     for dummys in [0]:
         if dummys is 0:
             fixS0 = False
@@ -120,10 +120,10 @@ for run_net in ['abs_con','sig_con','free']:
         res2 = [i for i, val in enumerate(datatot2!=datatot2) if not val.any()]
         paramsNN=np.zeros([20,4,np.shape(datatot3)[0]])
         for qq in range(20):
-            [net, matNN] = deep.pretrain(bvalues, arg, SNR=15, net=run_net, state=qq, sims=100000, lr=arg.lr)
-            net = deep.learn_IVIM(datatot[res], bvalues, arg, net=net, lr=arg.lr)
+            #[net, matNN] = deep.pretrain(bvalues, arg, SNR=15, net=run_net, state=qq, sims=100000)
+            net = deep.learn_IVIM(datatot[res], bvalues, arg)# net=net)
             paramsNN[qq]=deep.infer_IVIM(datatot3, bvalues, net)
-            matNN_count[qq]=matNN
+            #matNN_count[qq]=matNN
             del net
         # save NN results
         names = ['Dp_NN_{net}_rep'.format(net=run_net), 'D_NN_{net}_2'.format(net=run_net), 'f_NN_{net}_2'.format(net=run_net), 'S0_NN_{net}_2'.format(net=run_net)]
@@ -145,5 +145,5 @@ for run_net in ['abs_con','sig_con','free']:
                 img[deep.isnan(img)] = 0
                 img = np.reshape(img, [sx, sy, sz])
                 imgtot[:,:,:,rep]=img
-            nib.save(nib.Nifti1Image(imgtot * multiple[k], data.affine, data.header), '{folder}/CR{fold:02d}/MRI{ss}_{dat}_{name}_{opt}_pretrain.nii.gz'.format(folder=fold1,fold=fold,ss=ss, dat=dattype,name=names[k],opt=arg.optim))
-        np.save('{folder}/pretrain.npy', matNN_count)
+            nib.save(nib.Nifti1Image(imgtot * multiple[k], data.affine, data.header), '{folder}/CR{fold:02d}/MRI{ss}_{dat}_{name}_{opt}.nii.gz'.format(folder=fold1,fold=fold,ss=ss, dat=dattype,name=names[k],opt=arg.optim))
+        #np.save('{folder}/pretrain.npy', matNN_count)

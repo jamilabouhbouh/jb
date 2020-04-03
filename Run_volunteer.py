@@ -18,8 +18,8 @@ if not lsq_only:
             datas = data.get_data()
             sx, sy, sz, n_b_values = datas.shape
             X_dw_all = np.reshape(datas, (sx * sy * sz, n_b_values))
-            S0 = np.nanmean(X_dw_all[:, bvalues == 0], axis=0)
-            valid_id = np.squeeze(X_dw_all[:, bvalues == 0]<(S0/1))
+            S0 = np.nanmean(X_dw_all[np.squeeze(X_dw_all[:, bvalues == 0]>0), bvalues == 0], axis=0)
+            valid_id = np.squeeze(X_dw_all[:, bvalues == 0]<(S0/3))
             X_dw_all[np.squeeze(valid_id), :] = 0
             valid_id = np.sum(X_dw_all == 0, axis=1) == 0
             X_dw_sel=X_dw_all[valid_id,:]
@@ -27,7 +27,7 @@ if not lsq_only:
             X_dw_sel = X_dw_sel / S0[:, None]
             res = [i for i, val in enumerate(X_dw_sel != X_dw_sel) if not val.any()]
 
-            net = deep.learn_IVIM(X_dw_sel[res],bvalues,arg,lr=lr)
+            net = deep.learn_IVIM(X_dw_sel[res],bvalues,arg)
             paramsNN=deep.infer_IVIM(X_dw_sel, bvalues, net)
             del net
             gofNN=goodness_of_fit(bvalues,paramsNN[0],paramsNN[1],paramsNN[2],paramsNN[3],X_dw_sel)
