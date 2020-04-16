@@ -7,8 +7,6 @@ import torch.utils.data as utils
 from tqdm import tqdm
 import fitting_algorithms as fits
 import simulations as sim
-from sklearn.model_selection import train_test_split
-import random
 import matplotlib.pyplot as plt
 
 # here I define several neural networks. This one is the vanilla network, with no parameter constraints

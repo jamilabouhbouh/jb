@@ -15,7 +15,7 @@ from hyperparams import hyperparams as arg
 
 #load = False
 
-def sim(SNR, b, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False,segmented=False):
+def sim(SNR, b, arg, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False,segmented=False):
 
     IVIM_signal_noisy, f, D, Dp = sim_signal(SNR, b, sims=sims,Dmin = Dmin, Dmax = Dmax, fmin = fmin, fmax = fmax, Dsmin= Dsmin, Dsmax=Dsmax, rician=rician)
 
@@ -24,7 +24,7 @@ def sim(SNR, b, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.
     f = f[:num_samples_leval]
 
     start_time = time.time()
-    net = deep.learn_IVIM(IVIM_signal_noisy, b, arg, run_net=run_net)
+    net = deep.learn_IVIM(IVIM_signal_noisy, b, arg)
     elapsed_time = time.time() - start_time
     print('\ntime elapsed for training: {}\n'.format(elapsed_time))
     IVIM_signal_noisy=IVIM_signal_noisy[:num_samples_leval, :]
