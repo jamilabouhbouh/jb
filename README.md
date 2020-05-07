@@ -7,3 +7,11 @@ https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.27910
 A preprint is available at: https://arxiv.org/abs/1903.00095
 
 All code here is adapted from there and further developed by Oliver Gurney-Champion
+
+packages:
+pip install numpy
+pip install xlsxwriter
+pip install nibabel
+pip install torch (check website)
+pip install tqdm
+pip install matplotlib

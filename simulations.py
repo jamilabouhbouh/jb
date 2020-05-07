@@ -2,10 +2,7 @@ import numpy as np
 import deep as deep
 import fitting_algorithms as fit
 import time
-import sys
-import xlsxwriter
-from hyperparams import hyperparams as arg
-
+import matplotlib.pyplot as plt
 #run_net=sys.argv[1]
 
 #print('network is {}'.format(run_net))
@@ -15,14 +12,14 @@ from hyperparams import hyperparams as arg
 
 #load = False
 
-def sim(SNR, b, arg, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False,segmented=False):
-
+def sim(SNR, b, arg, run_net=None, sims = 100000, num_samples_leval = 10000, Dmin = 0.5 /1000, Dmax = 3.0 /1000, fmin = 0.05, fmax = 0.4, Dsmin= 0.01, Dsmax=0.1, rician = False,segmented=False):
+    
     IVIM_signal_noisy, f, D, Dp = sim_signal(SNR, b, sims=sims,Dmin = Dmin, Dmax = Dmax, fmin = fmin, fmax = fmax, Dsmin= Dsmin, Dsmax=Dsmax, rician=rician)
-
+    
     D = D[:num_samples_leval]
     Dp = Dp[:num_samples_leval]
     f = f[:num_samples_leval]
-
+    
     start_time = time.time()
     net = deep.learn_IVIM(IVIM_signal_noisy, b, arg)
     elapsed_time = time.time() - start_time
@@ -36,7 +33,80 @@ def sim(SNR, b, arg, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin
     del net
     print('results for NN')
     matNN=print_errors(np.squeeze(D), np.squeeze(f), np.squeeze(Dp), paramsNN)
+    dummy=np.array(paramsNN)
     del paramsNN
+    plt.plot(D[:1000],Dp[:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.3)
+    plt.xlabel('Dt')
+    plt.ylabel('Dp')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/inputDtDp.png')
+    plt.show()
+    plt.plot(f[:1000],Dp[:1000],'rx',markersize=5)
+    plt.xlim(0,0.6)
+    plt.ylim(0,0.3)
+    plt.xlabel('f')
+    plt.ylabel('Dp')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/inputfDp.png')
+    plt.show()
+    plt.plot(D[:1000],f[:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.6)
+    plt.xlabel('Dt')
+    plt.ylabel('f')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/inputDtf.png')
+    plt.show()
+    plt.plot(dummy[1,:1000],dummy[0,:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.3)
+    plt.xlabel('Dt')
+    plt.ylabel('Dp')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/NNDtDp.png')
+    plt.show()
+    plt.plot(dummy[2,:1000],dummy[0,:1000],'rx',markersize=5)
+    plt.xlim(0,0.6)
+    plt.ylim(0,0.3)
+    plt.xlabel('f')
+    plt.ylabel('Dp')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/NNfDp.png')
+    plt.show()
+    plt.plot(dummy[1,:1000],dummy[2,:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.6)
+    plt.xlabel('Dt')
+    plt.ylabel('f')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/NNDtf.png')
+    plt.show()
+    plt.plot(Dp[:1000],dummy[0,:1000],'rx',markersize=5)
+    plt.xlim(0,0.3)
+    plt.ylim(0,0.3)
+    plt.ylabel('DpNN')
+    plt.xlabel('Dpin')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/DpNNDpin.png')
+    plt.show()
+    plt.plot(D[:1000],dummy[1,:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.005)
+    plt.ylabel('DtNN')
+    plt.xlabel('Dtin')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/DtNNDtin.png')
+    plt.show()
+    plt.plot(f[:1000],dummy[2,:1000],'rx',markersize=5)
+    plt.xlim(0,0.6)
+    plt.ylim(0,0.6)
+    plt.ylabel('fNN')
+    plt.xlabel('fin')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/fNNfin.png')
+    plt.show()
     start_time = time.time()
     if segmented:
         paramsf = fit.fit_segmented_array(b,IVIM_signal_noisy)
@@ -47,9 +117,56 @@ def sim(SNR, b, arg, run_net=None, sims = 100000, num_samples_leval = 5000, Dmin
     print('\ntime elapsed for lsqfit: {}\n'.format(elapsed_time))
     print('results for lsqfit')
     matlsq=print_errors(np.squeeze(D),np.squeeze(f),np.squeeze(Dp),paramsf)
-
+    dummy=np.array(paramsf)
     del paramsf, IVIM_signal_noisy
-
+    plt.plot(dummy[1,:1000],dummy[0,:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.3)
+    plt.xlabel('D')
+    plt.ylabel('Dp')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/LSQDtDp.png')
+    plt.show()
+    plt.plot(dummy[2,:1000],dummy[0,:1000],'rx',markersize=5)
+    plt.xlim(0,0.6)
+    plt.ylim(0,0.3)
+    plt.xlabel('f')
+    plt.ylabel('Dp')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/LSQfDp.png')
+    plt.show()
+    plt.plot(dummy[1,:1000],dummy[2,:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.6)
+    plt.xlabel('D')
+    plt.ylabel('f')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/LSQDtf.png')
+    plt.show()
+    plt.plot(Dp[:1000],dummy[0,:1000],'rx',markersize=5)
+    plt.xlim(0,0.3)
+    plt.ylim(0,0.3)
+    plt.ylabel('Dplsq')
+    plt.xlabel('Dpin')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/DpLSQDpin.png')
+    plt.show()
+    plt.plot(D[:1000],dummy[1,:1000],'rx',markersize=5)
+    plt.xlim(0,0.005)
+    plt.ylim(0,0.005)
+    plt.ylabel('Dtlsq')
+    plt.xlabel('Dtin')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/DtLSQDtin.png')
+    plt.show()
+    plt.plot(f[:1000],dummy[2,:1000],'rx',markersize=5)
+    plt.xlim(0,0.6)
+    plt.ylim(0,0.6)
+    plt.ylabel('flsq')
+    plt.xlabel('fin')
+    plt.gcf()
+    plt.savefig('/scratch/ojgurney-champion/output/fLSQfin.png')
+    plt.show()
     return matlsq, matNN
 
 def sim_signal(SNR, b, sims = 100000, Dmin = 0.5 /1000, Dmax = 2.0 /1000, fmin = 0.1, fmax = 0.5, Dsmin= 0.05, Dsmax=0.2, rician = False, state = 123):

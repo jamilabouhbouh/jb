@@ -9,8 +9,8 @@ import numpy as np
 import simulations as sim
 from hyperparams import hyperparams as arg
 
-SNR=[15,30,45]
-b=np.array([0, 2, 5, 10, 15, 20, 35, 50, 75, 125, 200, 400, 600, 800])
+SNR=[60]
+b=np.array([0, 10, 20, 30, 40, 60, 150, 300, 500, 700])
 
 matlsq = np.zeros([len(SNR), 3, 3])
 matNN = np.zeros([len(SNR), 3, 3])

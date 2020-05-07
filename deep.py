@@ -15,7 +15,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.b_values_no0 = b_values_no0
         self.fc_layers = nn.ModuleList()
-        for i in range(5): # 3 fully connected hidden layers with ELU at the end
+        for i in range(3): # 3 fully connected hidden layers with ELU at the end
             self.fc_layers.extend([nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU()])
         self.encoder = nn.Sequential(*self.fc_layers, nn.Linear(len(b_values_no0), 4)) #final linear layer
 
@@ -37,7 +37,7 @@ class Net_abs(nn.Module):
 
         self.b_values_no0 = b_values_no0
         self.fc_layers = nn.ModuleList()
-        for i in range(5): # 3 fully connected hidden layers
+        for i in range(3): # 3 fully connected hidden layers
             self.fc_layers.extend([nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU()])
         self.encoder = nn.Sequential(*self.fc_layers, nn.Linear(len(b_values_no0), 4))
 
@@ -67,14 +67,14 @@ class Net_sig(nn.Module):
     def forward(self, X):
         params = self.encoder(X) # Dp, Dt, Fp
         # Defining constraints
-        Dmin = 0
+        Dmin = -0.0004
         Dmax = 0.005
-        fmin = 0.0
-        fmax = 0.7
+        fmin = -0.05
+        fmax = 0.6
         Dpmin = 0.005
-        Dpmax = 0.5
-        S0min = 0.8
-        S0max = 1.2
+        Dpmax = 0.3
+        S0min = 0.7
+        S0max = 1.3
         #applying constraints
         Dp = Dpmin + torch.sigmoid(params[:, 0].unsqueeze(1)) * (Dpmax - Dpmin)
         Dt = Dmin + torch.sigmoid(params[:, 1].unsqueeze(1)) * (Dmax - Dmin)
@@ -122,31 +122,29 @@ class Net_tiny(nn.Module):
 class Net_split(nn.Module):
     def __init__(self, b_values_no0):
         super(Net_split, self).__init__()
-
         self.b_values_no0 = b_values_no0
         # here the splitting starts
-        self.fc_layers = nn.ModuleList()
+        self.shared_layers = nn.Sequential(
+            nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU(),
+            nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU(),
+            nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU())
         self.fc_layers2 = nn.ModuleList()
-        self.fc_layers3 = nn.ModuleList()
-        self.fc_layers4 = nn.ModuleList()
-        self.fc_layers5 = nn.ModuleList()
         # extending the split networks
-        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0)/2)), nn.ELU()])
-        self.fc_layers3.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0)/2)), nn.ELU()])
-        self.fc_layers4.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0)/2)), nn.ELU()])
-        self.fc_layers5.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0)/2)), nn.ELU()])
-
-        self.fc_layers2.extend([nn.Linear(round(len(b_values_no0)/2), round(len(b_values_no0)/4)), nn.ELU()])
-        self.fc_layers3.extend([nn.Linear(round(len(b_values_no0)/2), round(len(b_values_no0)/4)), nn.ELU()])
-        self.fc_layers4.extend([nn.Linear(round(len(b_values_no0)/2), round(len(b_values_no0)/4)), nn.ELU()])
-        self.fc_layers5.extend([nn.Linear(round(len(b_values_no0)/2), round(len(b_values_no0)/4)), nn.ELU()])
-
-        self.encoder1 = nn.Sequential(*self.fc_layers, *self.fc_layers2, nn.Linear(round(len(b_values_no0)/4), 1))
-        self.encoder2 = nn.Sequential(*self.fc_layers, *self.fc_layers3, nn.Linear(round(len(b_values_no0)/4), 1))
-        self.encoder3 = nn.Sequential(*self.fc_layers, *self.fc_layers4, nn.Linear(round(len(b_values_no0)/4), 1))
-        self.encoder4 = nn.Sequential(*self.fc_layers, *self.fc_layers5, nn.Linear(round(len(b_values_no0)/4), 1))
-
+        #for aa in range(2):
+        #  self.shared_layers.extend([nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU()])
+        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
+        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
+        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
+        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
+        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
+        self.fc_layers2.extend([nn.Linear(round(len(b_values_no0)), round(len(b_values_no0))), nn.ELU()])
+        self.encoder1 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
+        self.encoder2 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
+        self.encoder3 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
+        self.encoder4 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
+        
     def forward(self, X):
+        #X = self.shared_layers(X)
         params1 = self.encoder1(X)
         params2 = self.encoder2(X)
         params3 = self.encoder3(X)
@@ -156,7 +154,7 @@ class Net_split(nn.Module):
         fmin = 0.0
         fmax = 0.7
         Dpmin = 0.005
-        Dpmax = 0.5
+        Dpmax = 0.7
         S0min = 0.8
         S0max = 1.2
 
@@ -170,7 +168,7 @@ class Net_split(nn.Module):
         return X, Dp, Dt, Fp, S0
 
 # This program trains the networks
-def learn_IVIM(X_train,b_values, arg, batch_size=128, net=None):
+def learn_IVIM(X_train,b_values, arg, net=None):
     # X_train = input training data
     # b_values=b-values used
     # arg are the input arguments, with: 
@@ -211,21 +209,22 @@ def learn_IVIM(X_train,b_values, arg, batch_size=128, net=None):
         # if a network was used as input parameter, work with that network instead (transfer learning).
         net.to(device)
     # defining the loss function
-    criterion = nn.MSELoss().to(device)
+    criterion = nn.MSELoss(reduction='mean').to(device)
     # splitting data into learning and validation set; subesequent initialising the Dataloaders
     split=int(np.floor(len(X_train)*0.8))
     train_set, val_set = torch.utils.data.random_split(torch.from_numpy(X_train.astype(np.float32)), [split, len(X_train)-split])
     trainloader = utils.DataLoader(train_set,
-                                    batch_size = batch_size,
+                                    batch_size = arg.batch_size,
                                     shuffle = True,
                                     drop_last = True)
     inferloader = utils.DataLoader(val_set,
-                                    batch_size = batch_size,
+                                    batch_size = 8*arg.batch_size,
                                     shuffle = False,
                                     drop_last = True)
     #defining the number of training and validation batches for normalisation later
-    num_batches = np.ceil(split // batch_size)
-    num_batches2 = np.ceil((len(X_train)-split) // batch_size)
+    totalit=np.min([1000,np.floor(split // arg.batch_size)])
+    batch_norm = totalit
+    batch_norm2 = np.floor(len(val_set)// (8*arg.batch_size))
     # defining optimiser
     if arg.optim=='adam':
         optimizer = optim.Adam(net.parameters(), lr=arg.lr, weight_decay=1e-4)
@@ -255,7 +254,9 @@ def learn_IVIM(X_train,b_values, arg, batch_size=128, net=None):
         maxloss=0.
         maxloss2=0.
 
-        for i, X_batch in enumerate(tqdm(trainloader, position=0, leave=True), 0):
+        for i, X_batch in enumerate(tqdm(trainloader, position=0, leave=True, total=totalit), 0):
+            if i>totalit:
+                break
             # zero the parameter gradients
             optimizer.zero_grad()
             # put batch on GPU if pressent
@@ -268,9 +269,9 @@ def learn_IVIM(X_train,b_values, arg, batch_size=128, net=None):
             X_pred[X_pred > 3] = 3
             # something I tried in the past with constraints in the loss function (not functional now)
             if arg.run_net == 'loss_con':
-                loss_con =  (nn.functional.relu(-Dp_pred) + nn.functional.relu(-Dt_pred) + nn.functional.relu(-Fp_pred) \
-                           + nn.functional.relu(-S0pred) + nn.functional.relu((Dp_pred-3)) \
-                           + nn.functional.relu((Dt_pred-0.05)) + nn.functional.relu((Fp_pred-1)))
+                loss_con =  (nn.functional.rELU(-Dp_pred) + nn.functional.rELU(-Dt_pred) + nn.functional.rELU(-Fp_pred) \
+                           + nn.functional.rELU(-S0pred) + nn.functional.rELU((Dp_pred-3)) \
+                           + nn.functional.rELU((Dt_pred-0.05)) + nn.functional.rELU((Fp_pred-1)))
                 if epoch < 5:
                     losstotcon += 0.0005 * torch.mean(loss_con)
                 else:
@@ -293,17 +294,20 @@ def learn_IVIM(X_train,b_values, arg, batch_size=128, net=None):
                 maxloss=loss.item()
         # after training, do validation in unseen data without updating gradients
         net.eval()
+        # import hiddenlayer as hl
+        # hl.build_graph(net.to(device), torch.zeros([60, 60]).to(device))
+        
         for i, X_batch in enumerate(tqdm(inferloader, position=0, leave=True), 0):
             optimizer.zero_grad()
             X_batch=X_batch.to(device)
             X_pred, _, _, _, _ = net(X_batch)
             loss = criterion(X_pred, X_batch)
             running_loss2 +=loss.item()
-            if loss.item() > maxloss2:
-                maxloss2=loss.item()
+            #if loss.item() > maxloss2:
+            #    maxloss2=loss.item()
         # scale losses
-        running_loss=running_loss/num_batches*1000
-        running_loss2=running_loss2/num_batches2*1000
+        running_loss=running_loss/batch_norm
+        running_loss2=running_loss2/batch_norm2
         # save loss history for plot
         loss_train.append(running_loss)
         loss_val.append(running_loss2)
@@ -314,7 +318,8 @@ def learn_IVIM(X_train,b_values, arg, batch_size=128, net=None):
         if arg.run_net == 'loss_con':
             print("Loss: {} of which constrains contributed {}".format(running_loss,losstotcon))
         else:
-            print("Loss: {loss}, validation_loss: {val_loss}, max_Loss: {maxloss}, max_validation_loss: {maxloss2}".format(loss=running_loss,val_loss=running_loss2, maxloss=maxloss, maxloss2=maxloss2))
+            #print("Loss: {loss}, validation_loss: {val_loss}, max_Loss: {maxloss}, max_validation_loss: {maxloss2}".format(loss=running_loss,val_loss=running_loss2, maxloss=maxloss, maxloss2=maxloss2))
+            print("Loss: {loss}, validation_loss: {val_loss}".format(loss=running_loss,val_loss=running_loss2))
         if arg.run_net == 'loss_con':
             if epoch == 6:
                 best = 1e16
@@ -371,7 +376,7 @@ def infer_IVIM(data,bvalues,net):
                                     drop_last = False)
     # start infering
     with torch.no_grad():
-        for i, X_batch in enumerate(tqdm(inferloader),0):
+        for i, X_batch in enumerate(tqdm(inferloader,position=0, leave=True),0):
             X_batch=X_batch.to(device)
             # here the signal is predicted. Note that we now are interested in the parameters and no longer in thepredicted signal decay.
             _, Dpt, Dtt, Fpt, S0t = net(X_batch)

@@ -18,7 +18,7 @@ def getListOfFiles(dirName):
         fullPath = os.path.join(dirName, entry)
         # If entry is a directory then get the list of files in this directory 
         if os.path.isdir(fullPath):
-            if 'other' not in fullPath:
+            if 'other' not in fullPath and 'oud' not in fullPath:
                 allFiles = allFiles + getListOfFiles(fullPath)
         elif '.nii.gz' in fullPath:
             if 'IVIM' in fullPath:

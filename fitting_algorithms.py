@@ -82,7 +82,7 @@ def fit_least_squares(b, x_dw, S0_output=False,fixS0=False):
             bounds = ([0.005, 0, 0], [2, 5, 7])
             params, _ = curve_fit(ivimN_noS0, b, x_dw, p0=[0.1, 0.001, 0.1], bounds=bounds)
         else:
-            bounds = ([0.05, 0, 0, 0.8], [5, 5, 8, 1.2])
+            bounds = ([0.05, 0, 0, 0.8], [5, 3, 6, 1.2])
             params, _ = curve_fit(ivimN, b, x_dw, p0=[0.1, 0.001, 0.1, 1], bounds=bounds)
         Dp, Dt, Fp, S0 = params[0]/10, params[1]/1000, params[2]/10, params[3]
         if S0_output:
