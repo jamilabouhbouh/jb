@@ -120,28 +120,30 @@ class Net_tiny(nn.Module):
 # this network splits the estimation of parameters into different networks, with sigmoid estimates
 # only added comments where the network is different from the one above
 class Net_split(nn.Module):
-    def __init__(self, b_values_no0):
+    def __init__(self, b_values_no0, arg):
         super(Net_split, self).__init__()
         self.b_values_no0 = b_values_no0
         # here the splitting starts
-        self.shared_layers = nn.Sequential(
-            nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU(),
-            nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU(),
-            nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU())
+        #self.shared_layers = nn.Sequential(
+        #    nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU(),
+        #    nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU(),
+        #    nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU())
+        self.fc_layers1 = nn.ModuleList()
         self.fc_layers2 = nn.ModuleList()
+        self.fc_layers3 = nn.ModuleList()
+        self.fc_layers4 = nn.ModuleList()
         # extending the split networks
         #for aa in range(2):
         #  self.shared_layers.extend([nn.Linear(len(b_values_no0), len(b_values_no0)), nn.ELU()])
-        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
-        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
-        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
-        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
-        self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.ELU()])
-        self.fc_layers2.extend([nn.Linear(round(len(b_values_no0)), round(len(b_values_no0))), nn.ELU()])
-        self.encoder1 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
+        for aa in range(5):
+            self.fc_layers1.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.BatchNorm1d(len(b_values_no0)), nn.Dropout(arg.dropout), nn.ELU()])
+            self.fc_layers2.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.BatchNorm1d(len(b_values_no0)), nn.Dropout(arg.dropout), nn.ELU()])
+            self.fc_layers3.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.BatchNorm1d(len(b_values_no0)), nn.Dropout(arg.dropout), nn.ELU()])
+            self.fc_layers4.extend([nn.Linear(len(b_values_no0), round(len(b_values_no0))), nn.BatchNorm1d(len(b_values_no0)), nn.Dropout(arg.dropout), nn.ELU()])
+        self.encoder1 = nn.Sequential(*self.fc_layers1, nn.Linear(round(len(b_values_no0)), 1))
         self.encoder2 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
-        self.encoder3 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
-        self.encoder4 = nn.Sequential(*self.fc_layers2, nn.Linear(round(len(b_values_no0)), 1))
+        self.encoder3 = nn.Sequential(*self.fc_layers3, nn.Linear(round(len(b_values_no0)), 1))
+        self.encoder4 = nn.Sequential(*self.fc_layers4, nn.Linear(round(len(b_values_no0)), 1))
         
     def forward(self, X):
         #X = self.shared_layers(X)
@@ -199,7 +201,7 @@ def learn_IVIM(X_train,b_values, arg, net=None):
         elif arg.run_net =='free':
             net = Net(b_values).to(device)
         elif arg.run_net == 'split':
-            net = Net_split(b_values).to(device)
+            net = Net_split(b_values,arg).to(device)
         elif arg.run_net == 'tiny':
             net = Net_tiny(b_values).to(device)
         else:
@@ -227,32 +229,36 @@ def learn_IVIM(X_train,b_values, arg, net=None):
     batch_norm2 = np.floor(len(val_set)// (8*arg.batch_size))
     # defining optimiser
     if arg.optim=='adam':
-        optimizer = optim.Adam(net.parameters(), lr=arg.lr, weight_decay=1e-4)
+        optimizer = optim.Adam([{'params': net.encoder1.parameters(), 'lr': arg.lr},{'params': net.encoder2.parameters()},{'params': net.encoder3.parameters()},{'params': net.encoder4.parameters()}], lr=arg.lr, weight_decay=1e-4)
     elif arg.optim=='sgd':
-        optimizer = optim.SGD(net.parameters(), lr=arg.lr,momentum=0.9, weight_decay=1e-4)
+        optimizer = optim.SGD([{'params': net.encoder1.parameters(), 'lr': arg.lr},{'params': net.encoder2.parameters()},{'params': net.encoder3.parameters()},{'params': net.encoder4.parameters()}], lr=arg.lr,momentum=0.9, weight_decay=1e-4)
     elif arg.optim=='adagrad':
-        optimizer = torch.optim.Adagrad(net.parameters(), lr=arg.lr, weight_decay=1e-4)
+        optimizer = torch.optim.Adagrad([{'params': net.encoder1.parameters(), 'lr': arg.lr},{'params': net.encoder2.parameters()},{'params': net.encoder3.parameters()},{'params': net.encoder4.parameters()}], lr=arg.lr, weight_decay=1e-4)
     elif arg.optim=='sgdr': #needs some tweaking. The warm restart needs implementing elsewhere
-        optimizer = optim.SGD(net.parameters(), lr=arg.lr,momentum=0.9, weight_decay=1e-4)
+        optimizer = optim.SGD([{'params': net.encoder1.parameters(), 'lr':arg.lr},{'params': net.encoder2.parameters()},{'params': net.encoder3.parameters()},{'params': net.encoder4.parameters()}], lr=arg.lr,momentum=0.9, weight_decay=1e-4)
+    if arg.optim == 'sgdr':
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(trainloader))
-
+    else:
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5)
     # Initialising parameters
     best = 1e16
     num_bad_epochs = 0
     loss_train=[]
     loss_val=[]
-    get_ipython().run_line_magic('matplotlib', 'inline')
+    bestlist=[]
+    bestepochlist=[]
+    prev_lr=0
+    # get_ipython().run_line_magic('matplotlib', 'inline')
     # Train
     for epoch in range(1000):
         print("-----------------------------------------------------------------")
         print("Epoch: {}; Bad epochs: {}".format(epoch, num_bad_epochs))
         #initialising and resetting parameters
         net.train()
-        running_loss = 0.
-        running_loss2 = 0.
+        running_loss_train = 0.
+        running_loss_val = 0.
         losstotcon = 0.
         maxloss=0.
-        maxloss2=0.
 
         for i, X_batch in enumerate(tqdm(trainloader, position=0, leave=True, total=totalit), 0):
             if i>totalit:
@@ -260,6 +266,8 @@ def learn_IVIM(X_train,b_values, arg, net=None):
             # zero the parameter gradients
             optimizer.zero_grad()
             # put batch on GPU if pressent
+            if i == 3:
+                optimizer.param_groups[0]['lr']=arg.lr_Ds
             X_batch = X_batch.to(device)
             ## forward + backward + optimize
             X_pred, Dp_pred, Dt_pred, Fp_pred, S0pred = net(X_batch)
@@ -286,14 +294,19 @@ def learn_IVIM(X_train,b_values, arg, net=None):
             # updating network
             loss.backward()
             optimizer.step()
-            if arg.optim=='sgdr':
+            if arg.optim == 'sgdr':
                 scheduler.step()
             # total loss and determine max loss over all batches
-            running_loss +=loss.item()
+            running_loss_train +=loss.item()
             if loss.item() > maxloss:
                 maxloss=loss.item()
         # after training, do validation in unseen data without updating gradients
         net.eval()
+        plt.figure(3)
+        plt.clf()
+        plt.plot(Dp_pred.tolist(),Fp_pred.tolist(),'rx',markersize=5)
+        plt.ion()
+        plt.show()
         # import hiddenlayer as hl
         # hl.build_graph(net.to(device), torch.zeros([60, 60]).to(device))
         
@@ -302,48 +315,87 @@ def learn_IVIM(X_train,b_values, arg, net=None):
             X_batch=X_batch.to(device)
             X_pred, _, _, _, _ = net(X_batch)
             loss = criterion(X_pred, X_batch)
-            running_loss2 +=loss.item()
+            running_loss_val +=loss.item()
             #if loss.item() > maxloss2:
             #    maxloss2=loss.item()
         # scale losses
-        running_loss=running_loss/batch_norm
-        running_loss2=running_loss2/batch_norm2
+        running_loss_train=running_loss_train/batch_norm
+        running_loss_val=running_loss_val/batch_norm2
         # save loss history for plot
-        loss_train.append(running_loss)
-        loss_val.append(running_loss2)
+        loss_train.append(running_loss_train)
+        loss_val.append(running_loss_val)
+        scheduler.step(running_loss_val)
+        if optimizer.param_groups[0]['lr'] < prev_lr:
+            net.load_state_dict(final_model)
+        prev_lr = optimizer.param_groups[0]['lr']
         # some stuff
         if arg.optim=='sgdr':
             print('Reset scheduler')
             scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(trainloader))
         if arg.run_net == 'loss_con':
-            print("Loss: {} of which constrains contributed {}".format(running_loss,losstotcon))
+            print("Loss: {} of which constrains contributed {}".format(running_loss_train,losstotcon))
         else:
-            #print("Loss: {loss}, validation_loss: {val_loss}, max_Loss: {maxloss}, max_validation_loss: {maxloss2}".format(loss=running_loss,val_loss=running_loss2, maxloss=maxloss, maxloss2=maxloss2))
-            print("Loss: {loss}, validation_loss: {val_loss}".format(loss=running_loss,val_loss=running_loss2))
+            #print("Loss: {loss}, validation_loss: {val_loss}, max_Loss: {maxloss}, max_validation_loss: {maxloss2}".format(loss=running_loss,val_loss=running_loss_val, maxloss=maxloss, maxloss2=maxloss2))
+            print("Loss: {loss}, validation_loss: {val_loss}, lr: {lr}".format(loss=running_loss_train,val_loss=running_loss_val, lr=optimizer.param_groups[1]['lr']))
         if arg.run_net == 'loss_con':
             if epoch == 6:
                 best = 1e16
         # early stopping criteria
-        if running_loss2 < best:
-            print("############### Saving good model ###############################")
+        aaa=1
+        if running_loss_val < best:
+            print("\n############### Saving good model ###############################")
             final_model = net.state_dict()
-            best = running_loss2
-            num_bad_epochs = 0
-        else:
-            # if loss not better, than add "bad epoch" and dont save network
+            best = running_loss_val
+            bestlist.append(best)
+            bestepochlist.append(epoch)
+            aaa=2
+        betterepochs = [bestepochlist[ii] if arg.improve * bestlist[ii] > running_loss_val else None for ii in range(len(bestlist))]
+        for ii in range(len(bestlist)-aaa,-1,-1):
+            if (arg.improve * bestlist[ii]) > running_loss_val: del bestlist[ii]
+        # early stopping if no improvement of at least arg.improve % over the past patience epochs, terminate training
+        add_bad_epoch = False
+        if not betterepochs:
+            add_bad_epoch = True
+        betterepochs = [i for i in betterepochs if (i!=None)]
+        if not betterepochs:
+            add_bad_epoch = True
+        elif max(betterepochs) < (epoch-10):
+            add_bad_epoch = True
+        if add_bad_epoch:
             num_bad_epochs = num_bad_epochs + 1
             if num_bad_epochs == arg.patience:
-                print("Done, best loss: {}".format(best))
+                print("\nDone, best val loss: {}".format(best))
                 break
+        else:
+            num_bad_epochs = 0
         if epoch>0:
-            # plot loss history
+            plt.figure(1)
+            plt.clf()
+            plt.plot(b_values, X_pred.data[0])
+            plt.plot(b_values, X_batch.data[0])
+            plt.yscale("log")
+            plt.xlabel('b_val')
+            plt.ylabel('signal')
+            plt.ion()
+            plt.show()
+            plt.pause(0.001)
+            plt.figure(2)
+            plt.clf()
             plt.plot(loss_train)
             plt.plot(loss_val)
             plt.yscale("log")
             plt.xlabel('epoch')
             plt.ylabel('loss')
+            plt.ion()
             plt.show()
+            plt.pause(0.001)
     print("Done")
+    plt.figure(1)
+    plt.gcf()
+    plt.savefig('C:/Users/ojgurney-champion/Dropbox/Research/DeepLearning/deep_ivim/Output/fig_fit.png')
+    plt.figure(2)
+    plt.gcf()
+    plt.savefig('C:/Users/ojgurney-champion/Dropbox/Research/DeepLearning/deep_ivim/Output/fig_train.png')
     # Restore best model
     net.load_state_dict(final_model)
     return net
